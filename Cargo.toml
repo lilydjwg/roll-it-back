@@ -1,0 +1,9 @@
+[package]
+name = "roll-it-back"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+btrfsutil = { path = "../btrfsutil-rs", version = "*" }
+clap = { version = "*", default-features = false, features = ["std", "help", "error-context", "cargo"] }
+eyre = "0.6.12"
