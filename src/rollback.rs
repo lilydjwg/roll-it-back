@@ -1,44 +1,13 @@
 use std::path::Path;
-use std::io::{ErrorKind, Result as IoResult};
-use std::fs::metadata;
-use std::os::linux::fs::MetadataExt;
 
 use eyre::Result;
 use btrfsutil::subvolume::{Subvolume, SubvolumeIterator};
 
-use crate::cleanup;
-
 pub fn do_rollback(from: &Path, to: &Path, backup: &Path, dry_run: bool) -> Result<()> {
-  let need_do_snaphosts = {
-    if dry_run {
-      let from_parent = backup.parent().unwrap().join(".");
-      let backup_parent = backup.parent().unwrap().join(".");
-      if is_same_device(&from_parent, &backup_parent)? {
-        println!("rename {} to {}", from.display(), backup.display());
-        false
-      } else {
-        true
-      }
-    } else if let Err(e) = std::fs::rename(from, backup) {
-      if e.kind() == ErrorKind::CrossesDevices {
-        true
-      } else {
-        return Err(e.into());
-      }
-    } else {
-      false
-    }
-  };
-
-  if need_do_snaphosts {
-    let sub = Subvolume::get(from)?;
-    if dry_run {
-      println!("snapshot {} to {}", from.display(), backup.display());
-    } else {
-      sub.snapshot(backup, None, None)?;
-    }
-    snapshot_nested_subvolumes(from, backup, None, dry_run)?;
-    cleanup::do_cleanup(from, dry_run)?;
+  if dry_run {
+    println!("rename {} to {}", from.display(), backup.display());
+  } else {
+    std::fs::rename(from, backup)?;
   }
 
   let srctop = if dry_run { from } else { backup };
@@ -53,12 +22,6 @@ pub fn do_rollback(from: &Path, to: &Path, backup: &Path, dry_run: bool) -> Resu
   snapshot_nested_subvolumes(srctop, from, rebase_src, dry_run)?;
 
   Ok(())
-}
-
-fn is_same_device(a: &Path, b: &Path) -> IoResult<bool> {
-  let stat_a = metadata(a)?;
-  let stat_b = metadata(b)?;
-  Ok(stat_a.st_dev() == stat_b.st_dev())
 }
 
 fn snapshot_nested_subvolumes(

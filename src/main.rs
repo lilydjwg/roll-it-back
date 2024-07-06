@@ -1,5 +1,3 @@
-#![feature(io_error_more)]
-
 use clap::{command, arg, crate_name, ArgGroup};
 
 mod rollback;
