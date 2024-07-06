@@ -1,3 +1,5 @@
+#![feature(io_error_more)]
+
 use clap::{command, arg, crate_name, ArgGroup};
 
 mod rollback;
@@ -22,9 +24,9 @@ fn main() {
   if let Some(from) = args.get_one::<String>("from") {
     let to = args.get_one::<String>("to").unwrap();
     let backup = args.get_one::<String>("backup").unwrap();
-    rollback::do_rollback(from, to, backup, dry_run).unwrap();
+    rollback::do_rollback(from.as_ref(), to.as_ref(), backup.as_ref(), dry_run).unwrap();
   } else if let Some(cleanup) = args.get_one::<String>("cleanup") {
-    cleanup::do_cleanup(cleanup, dry_run).unwrap();
+    cleanup::do_cleanup(cleanup.as_ref(), dry_run).unwrap();
   } else {
     let _ = cmd.print_help();
     std::process::exit(1);
